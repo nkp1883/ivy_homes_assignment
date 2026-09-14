@@ -6,6 +6,8 @@
     "repo_url": "https://github.com/nkp1883/ivy_homes_assignment",
     "demo_url": "https://ivy-homes-assignment-swart.vercel.app/"
   },
+
+  
   "answers": {
     "total_listing_records": 3800,
     "unique_properties": 3800,
@@ -94,6 +96,19 @@
       "category": "sorting",
       "finding": "Listings document sort_by and order, but order=asc and order=desc returned the same ordering; descending sorting is not functioning as documented.",
       "evidence": []
+    },
+    {
+      "category": "data_quality",
+      "finding": "Seven listing records have floor values greater than total_floors, which is internally inconsistent property data.",
+      "evidence": [
+        "MAG-3000932",
+        "100-3001548",
+        "DWE-3001307",
+        "100-3001067",
+        "DWE-3003186",
+        "SQU-3001698",
+        "100-3001543"
+      ]
     },
     {
       "category": "data_quality",

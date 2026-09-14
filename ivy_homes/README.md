@@ -4,6 +4,30 @@ A frontend implementation of the Ivy Homes Software Engineering Internship assig
 
 The application is a property marketplace built around the existing Ivy Homes API. It provides authentication, property discovery, filters, listing details, saved listings, rentals, projects, and a client-facing market insights dashboard.
 
+## Table of Contents
+
+- [Live Demo](#live-demo)
+- [GitHub Repository](#github-repository)
+- [Tech Stack](#tech-stack)
+- [How to Run](#how-to-run)
+- [Application Routes](#application-routes)
+- [API Investigation](#api-investigation)
+- [What I Distrusted and How I Verified It](#what-i-distrusted-and-how-i-verified-it)
+- [Hypotheses That Did Not Pan Out](#hypotheses-that-did-not-pan-out)
+- [What I Checked That Turned Out to Be Fine](#what-i-checked-that-turned-out-to-be-fine)
+- [Assignment Answers](#assignment-answers)
+- [Data Findings Used in the Application](#data-findings-used-in-the-application)
+- [Insights Dashboard](#insights-dashboard)
+- [Saved Listings](#saved-listings)
+- [Architecture](#architecture)
+- [API Behaviour Summary](#api-behaviour-summary)
+- [LLM Disclosure](#llm-disclosure)
+- [What I Would Do With Another Two Days](#what-i-would-do-with-another-two-days)
+- [Development Workflow](#development-workflow)
+- [Notes](#notes)
+
+---
+
 ## Live Demo
 
 Demo URL: https://ivy-homes-assignment-swart.vercel.app/
@@ -21,10 +45,12 @@ Repository: https://github.com/nkp1883/ivy_homes_assignment
 - Axios
 - React Router
 - Context API
-- Local Storage
+- Local Storage for client-side authentication/session persistence
 - Recharts
 
 This is a frontend-only implementation. No custom backend, Express server, MongoDB database, or additional API layer was introduced.
+
+---
 
 ## How to Run
 
@@ -38,7 +64,7 @@ This is a frontend-only implementation. No custom backend, Express server, Mongo
 Clone the repository and install dependencies:
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/nkp1883/ivy_homes_assignment
 cd ivy_homes_assignment/ivy_homes
 npm install
 ```
@@ -76,6 +102,8 @@ To preview the production build locally:
 npm run preview
 ```
 
+---
+
 ## Application Routes
 
 | Route | Purpose |
@@ -92,11 +120,17 @@ npm run preview
 
 Protected application routes require authentication.
 
+---
+
 ## API Investigation
 
 The API documentation was treated as a starting point rather than as an unquestionable specification.
 
 The documentation itself states that it is AI-generated and unreviewed and that the running API should be treated as the source of truth. I therefore validated the important documented behaviours directly against the running API before building the frontend around them.
+
+The investigation used the assignment reference timestamp:
+
+`2026-09-10T00:00:00+05:30`
 
 The general approach was:
 
@@ -111,6 +145,8 @@ The general approach was:
 9. Use the observed behaviour to decide which frontend assumptions were safe.
 
 This prevented the frontend from depending on behaviours that existed only in the documentation.
+
+---
 
 ## What I Distrusted and How I Verified It
 
@@ -253,6 +289,21 @@ The frontend therefore uses the backend saved-listings API rather than a Local S
 
 The frontend keeps authentication tokens in the client session, while saved-listing state is retrieved from the API through `GET /v1/saved`.
 
+---
+
+## Hypotheses That Did Not Pan Out
+
+Several early hypotheses were deliberately tested rather than accepted from intuition:
+
+- **Locality filtering might be ignored by the API:** it worked and was case-insensitive.
+- **BHK filtering might be ignored:** it worked.
+- **Furnishing filtering might be ignored:** it worked.
+- **Repeated contact details might prove fake listings:** repeated contacts alone were not sufficient evidence.
+- **A coarse duplicate fingerprint might identify exact duplicate properties:** deeper inspection showed the apparent matches were different physical properties.
+- **Every collection listing should have a working detail endpoint:** this was not true, so the frontend handles detail failures gracefully.
+
+---
+
 ## What I Checked That Turned Out to Be Fine
 
 An important part of the investigation was not only finding inconsistencies, but also testing assumptions that did not fail.
@@ -348,6 +399,38 @@ The data was grouped by locality and bedroom count and compared against the medi
 
 Other attributes such as verification, live status, and posting source were considered as supporting context rather than proof that a listing was fake.
 
+---
+
+## Assignment Answers
+
+The calculations were performed against the exhaustively retrieved datasets and the assignment reference timestamp.
+
+| Question | Answer |
+|---|---|
+| Q1 | 3800 |
+| Q2 | 3800 |
+| Q3 | 2998 |
+| Q4 | 14 |
+| Q5 | ₹5,553,900 monthly rent |
+| Q6 | ₹18,334.20/sqft |
+| Q7 | P30175, Godrej Residency, ₹28,200,000 |
+| Q8 | 128 |
+| Q9 | 7 |
+| Q10 | 317 |
+
+### Calculation notes
+
+- **Q2:** A complete physical-property fingerprint was used. It produced 3800 unique fingerprints and 0 exact duplicate groups.
+- **Q4:** 14 distinct records violated the tested sanity rules: 7 had `floor > total_floors` and 7 had non-positive prices. Zero values in other fields were not automatically classified as corrupt.
+- **Q5:** The assigned locality was Kharadi; monthly rent was summed across the relevant rental records.
+- **Q6:** The arithmetic mean of `price / carpet_area` was calculated for live 2-BHK listings after excluding Q4 and Q9 records and invalid price/area values.
+- **Q7:** The project-level price field showed an integrity/unit inconsistency. The final answer was therefore based on the maximum listing-level price grouped by project, producing P30175 / Godrej Residency / ₹28,200,000.
+- **Q8:** The time window was `[2026-09-03 00:00 IST, 2026-09-10 00:00 IST)`, producing 128 listings.
+- **Q9:** A suspicious listing was defined using positive price `< 1%` of the median price for the same locality and bedroom count. This produced 7 suspects. Verification, live status, and posting source were used only as supporting context.
+- **Q10:** Project `total_listings` values were compared with counts from all retrieved listings grouped by `project_id`, producing 317 mismatches.
+
+---
+
 ## Data Findings Used in the Application
 
 The Insights page focuses on information useful to a property user rather than exposing API implementation problems.
@@ -364,46 +447,32 @@ The underlying investigation established several useful market-level facts, incl
 
 These are used to create the client-facing Insights dashboard.
 
+---
+
 ## Insights Dashboard
 
 The Insights screen is designed as a product-facing analytics page.
 
 It includes:
 
-**Market Overview**
-- Total listings
-- Median price
-- Median price per square foot
-- Live listing inventory
-
-**Locality Analysis**
-- Listing count by locality
-- Median price by locality
-- Top localities by available inventory
-
-**Property Mix**
-- BHK distribution
-- Number of listings for each BHK configuration
-
-**Market Highlights**
-- Most listed locality
-- Highest median-price locality
-- Recent listing activity
-- Rental market snapshot
+| Section | Contents |
+|---|---|
+| **Market Overview** | Total listings · Median price · Median price per square foot · Live listing inventory |
+| **Locality Analysis** | Listing count by locality · Median price by locality · Top localities by available inventory |
+| **Property Mix** | BHK distribution · Number of listings for each BHK configuration |
+| **Market Highlights** | Most listed locality · Highest median-price locality · Recent listing activity · Rental market snapshot |
 
 The values are calculated from the fetched data rather than hardcoded from examples in the API documentation.
 
+---
+
 ## Saved Listings
 
-The API's favourites endpoints were unavailable during testing, so saved listings are implemented locally.
+Saved listings use the working backend `/v1/saved` endpoint discovered during API investigation.
 
-The storage model is scoped by user:
+`SavedListingsContext` provides saved-listing state to the application, while the backend API remains the source of truth for the authenticated user's saved listings. The frontend does not use a localStorage-only saved-listing implementation.
 
-```
-savedListings:<user-email>
-```
-
-This means one authenticated user's saved listings do not appear in another user's account on the same browser.
+---
 
 ## Architecture
 
@@ -459,11 +528,13 @@ React Router provides protected application routes and URL-addressable detail pa
 
 ### Saved listings
 
-SavedListingsContext provides saved-listing state to the application while Local Storage provides persistence.
+SavedListingsContext provides saved-listing state to the application, with the backend `/v1/saved` endpoint providing persistence and per-user ownership.
 
 ### Client-side analytics
 
 Analytics are calculated from the fetched records because the documented analytics endpoint is unavailable.
+
+---
 
 ## API Behaviour Summary
 
@@ -481,8 +552,21 @@ Analytics are calculated from the fetched records because the documented analyti
 | Listing detail | Some collection IDs return 404 | Graceful detail fallback/error |
 | Rentals | Collection/detail usable | Frontend integration |
 | Projects | Collection/detail usable | Frontend integration |
-| Favourites | 404 | Local Storage |
+| Favourites | 404 | Use discovered `/v1/saved` |
+| Saved listings | `/v1/saved` works | Backend persistence |
 | Analytics summary | 404 | Compute analytics in frontend |
+
+---
+
+## LLM Disclosure
+
+LLM assistance was used during development for implementation support, debugging, code review, documentation drafting, and reasoning about API behaviour.
+
+The API was independently tested against the running service, datasets were retrieved and analysed, assignment answers were calculated from the observed data, and the final implementation and submission decisions were reviewed by me.
+
+No API behaviour was accepted solely because an LLM suggested it; the running API was treated as the operational source of truth.
+
+---
 
 ## What I Would Do With Another Two Days
 
@@ -559,28 +643,15 @@ For a production architecture, I would move the API-key-dependent communication 
 
 That is deliberately outside the scope of this frontend-only assignment.
 
+---
+
 ## Development Workflow
 
 The project was developed incrementally rather than as one large final change.
 
-Major milestones were committed separately, including:
-
-```
-chore: initialize React frontend
-feat: add Ivy Homes API client
-feat: implement authentication and session refresh
-feat: add protected routes and application layout
-feat: add listings browsing and filters
-feat: add listing detail pages
-feat: add per-user saved listings
-feat: add rental and project browsing
-feat: add property market insights dashboard
-style: polish responsive property dashboard
-fix: improve API error and edge case handling
-docs: finalize assignment submission
-```
-
 The purpose of the commit history is to show the progression from API integration to the completed product rather than artificially increasing the number of commits.
+
+---
 
 ## Notes
 
