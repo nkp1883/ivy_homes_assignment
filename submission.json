@@ -1,0 +1,237 @@
+{
+  "api_key": "IVY26-1137D53344C7",
+  "candidate": {
+    "name": "NIKHIL KUMAR PANDEY",
+    "email": "nikhil.20230032@mnnit.ac.in , nikhilkumarpandey300@gmail.com",
+    "repo_url": "https://github.com/nkp1883/ivy_homes_assignment",
+    "demo_url": "https://ivy-homes-assignment-swart.vercel.app/"
+  },
+  "answers": {
+    "total_listing_records": 3800,
+    "unique_properties": 3800,
+    "active_listings": 2998,
+    "corrupt_listing_ids": [
+      "MAG-3000932",
+      "100-3001548",
+      "DWE-3001307",
+      "100-3001067",
+      "DWE-3003186",
+      "SQU-3001698",
+      "100-3001543",
+      "100-3003022",
+      "100-3000174",
+      "SQU-3000591",
+      "SQU-3000419",
+      "100-3002344",
+      "MAG-3001986",
+      "MAG-3001979"
+    ],
+    "total_monthly_rent": 5553900,
+    "avg_price_per_sqft_2bhk": 18334.2,
+    "costliest_project": {
+      "project_id": "P30175",
+      "price_max_inr": 28200000
+    },
+    "listings_last_7_days": 128,
+    "fake_listing_ids": [
+      "MAG-3000012",
+      "ZER-3000796",
+      "100-3002878",
+      "SQU-3000349",
+      "MAG-3001932",
+      "MAG-3001311",
+      "100-3001372"
+    ],
+    "projects_with_wrong_listing_count": 317
+  },
+  "findings": [
+    {
+      "category": "auth",
+      "finding": "API key is documented as a query parameter (?api_key=...), but the live API rejects that usage and requires the X-API-Key request header.",
+      "evidence": []
+    },
+    {
+      "category": "auth",
+      "finding": "Login response is documented with a token field, but the live API returns access_token.",
+      "evidence": []
+    },
+    {
+      "category": "auth",
+      "finding": "Access token expiry is documented as 86400 seconds, but the live login response reports expires_in=900 seconds.",
+      "evidence": []
+    },
+    {
+      "category": "auth",
+      "finding": "Documentation says there is no refresh flow, but the live API provides POST /auth/refresh.",
+      "evidence": []
+    },
+    {
+      "category": "auth",
+      "finding": "The refresh token is not documented in the login response, but the live response includes refresh_token and refresh_url.",
+      "evidence": []
+    },
+    {
+      "category": "auth",
+      "finding": "Documentation implies logout invalidates the current token server-side, but /auth/logout states tokens are stateless and the previously issued access token remained usable after logout.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "Collections are documented as page/limit based with page_size in the response, but the live listings response uses offset, count and has_more.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "The documented page parameter is ignored for listings: page=2&limit=20 returned the same starting records as the initial request.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "The documented listings maximum limit of 200 is incorrect. limit=200 returned an effective limit/count of 50.",
+      "evidence": []
+    },
+    {
+      "category": "sorting",
+      "finding": "Listings document sort_by and order, but order=asc and order=desc returned the same ordering; descending sorting is not functioning as documented.",
+      "evidence": []
+    },
+    {
+      "category": "data_quality",
+      "finding": "Money is documented as INR integers, but a negative listing price was observed. Full extraction identified the corrupt records separately.",
+      "evidence": [
+        "100-3003022",
+        "100-3000174",
+        "SQU-3000591",
+        "SQU-3000419",
+        "100-3002344",
+        "MAG-3001986",
+        "MAG-3001979"
+      ]
+    },
+    {
+      "category": "missing_endpoint",
+      "finding": "The documented GET /v1/listings/{listing_id}/similar endpoint returned 404 for valid listing IDs.",
+      "evidence": [
+        "MAG-3000164",
+        "DWE-3002501"
+      ]
+    },
+    {
+      "category": "filters",
+      "finding": "Project documentation references /v1/listings?project_id=... for validating project listing counts, but project_id did not filter the listings response; different project IDs returned the same unfiltered result.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "Rentals are documented as page/limit based with page_size, but the live rentals response uses offset, count and has_more.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "The documented rentals page parameter is ignored: page=2&limit=20 returned the same starting records as the initial request.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "The documented rentals maximum limit of 200 is incorrect; the effective maximum is 50.",
+      "evidence": []
+    },
+    {
+      "category": "sorting",
+      "finding": "Rentals document sort_by and order, but descending ordering is unavailable; sorting is effectively ascending only.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "Projects are documented as page/limit based with page_size, but the live projects response uses offset, count and has_more.",
+      "evidence": []
+    },
+    {
+      "category": "pagination",
+      "finding": "The documented projects maximum limit of 200 is incorrect; the effective maximum is 50.",
+      "evidence": []
+    },
+    {
+      "category": "sorting",
+      "finding": "Projects document sort_by and order, but descending ordering does not work as documented; sorting is effectively ascending only.",
+      "evidence": []
+    },
+    {
+      "category": "data_quality",
+      "finding": "Project price data contains anomalous records where price_min exceeds price_max. Examples include P30033-P30037.",
+      "evidence": [
+        "P30033",
+        "P30034",
+        "P30035",
+        "P30036",
+        "P30037"
+      ]
+    },
+    {
+      "category": "missing_endpoint",
+      "finding": "The documented /v1/favourites endpoints (GET, POST and DELETE) returned 404. During further API investigation, the running API was found to expose the working /v1/saved endpoint, which is used by the frontend for fetching, adding and removing saved listings.",
+      "evidence": []
+    },
+    {
+      "category": "missing_endpoint",
+      "finding": "The documented GET /v1/analytics/summary endpoint returned 404 Not Found.",
+      "evidence": []
+    },
+    {
+      "category": "completeness",
+      "finding": "The listings metadata reported total=3488, but offset pagination reached 3800 retrievable records. The final page at offset 3790 contained 10 records with has_more=false.",
+      "evidence": []
+    },
+    {
+      "category": "duplicates",
+      "finding": "A detailed physical-property fingerprint using property-defining attributes produced 3800 unique fingerprints for 3800 listings, with no duplicate groups.",
+      "evidence": []
+    },
+    {
+      "category": "fraud",
+      "finding": "Seven strong fake-listing candidates were identified because their positive price was below 1% of the median price for comparable listings in the same locality and bedroom category.",
+      "evidence": [
+        "MAG-3000012",
+        "ZER-3000796",
+        "100-3002878",
+        "SQU-3000349",
+        "MAG-3001932",
+        "MAG-3001311",
+        "100-3001372"
+      ]
+    },
+    {
+      "category": "consistency",
+      "finding": "Project total_listings disagrees with counts derived from the complete extracted listings dataset for 317 projects. Comparing only live listings produced 95 mismatches, so all listings were used for the assignment answer.",
+      "evidence": [
+        "P30003",
+        "P30004",
+        "P30006",
+        "P30007",
+        "P30008",
+        "P30009",
+        "P30010",
+        "P30011",
+        "P30012",
+        "P30013",
+        "P30014",
+        "P30015",
+        "P30016",
+        "P30018",
+        "P30019",
+        "P30020",
+        "P30021",
+        "P30023",
+        "P30026",
+        "P30028"
+      ]
+    },
+    {
+      "category": "units",
+      "finding": "Project price fields are inconsistent with listing-level prices. P30175 has project price_max=3.08 while its maximum listing price is ₹28,200,000, so the costliest-project answer was derived from listing prices.",
+      "evidence": [
+        "P30175"
+      ]
+    }
+  ]
+}

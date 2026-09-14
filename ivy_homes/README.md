@@ -6,11 +6,11 @@ The application is a property marketplace built around the existing Ivy Homes AP
 
 ## Live Demo
 
-Demo URL: ADD_DEPLOYED_URL_HERE
+Demo URL: https://ivy-homes-assignment-swart.vercel.app/
 
 ## GitHub Repository
 
-Repository: ADD_GITHUB_REPOSITORY_URL_HERE
+Repository: https://github.com/nkp1883/ivy_homes_assignment
 
 ## Tech Stack
 
@@ -237,18 +237,21 @@ This includes:
 
 The API investigation detail remains in this README rather than being exposed as an error to the end user.
 
-### 9. Favourites endpoints
+### 9. Saved listings endpoints
 
 The documented favourites endpoints were tested and returned 404.
 
-Because the assignment still requires saved listings to work from the user's perspective, the frontend implements saved listings using Local Storage, scoped by the authenticated user's email.
+During further API investigation, I discovered that the running API exposes the working `/v1/saved` endpoint instead.
 
-This provides:
+The frontend therefore uses the backend saved-listings API rather than a Local Storage workaround. Saved listings are associated with the authenticated user and support:
 
-- add/remove saved listings,
-- persistence after refresh,
-- persistence after re-login,
-- separation between users.
+- fetching the user's saved listings,
+- adding a listing to saved listings,
+- removing a listing from saved listings,
+- persistence after page refresh,
+- persistence after logging out and logging back in.
+
+The frontend keeps authentication tokens in the client session, while saved-listing state is retrieved from the API through `GET /v1/saved`.
 
 ## What I Checked That Turned Out to Be Fine
 

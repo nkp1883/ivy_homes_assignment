@@ -3,74 +3,122 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from 'react';
 import { useAuth } from './AuthContext';
 import {
-  getSavedListings,
-  addSavedListing,
+  fetchSavedListings,
+  saveListing,
   removeSavedListing,
-  isListingSaved,
-} from '../utils/storage';
+} from '../api/saved';
 
 const SavedListingsContext = createContext(null);
 
-export function SavedListingsProvider({ children }) {
-  const { user } = useAuth();
-  const userEmail = user?.email ?? null;
+function normalizeSavedListings(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
 
-  const [saved, setSaved] = useState(() => getSavedListings(userEmail));
+  return data?.results || data?.saved || data?.data || [];
+}
+
+export function SavedListingsProvider({ children }) {
+  const { isAuthenticated } = useAuth();
+
+  const [savedListings, setSavedListings] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadSavedListings = useCallback(async () => {
+    if (!isAuthenticated) {
+      setSavedListings([]);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const data = await fetchSavedListings();
+      setSavedListings(normalizeSavedListings(data));
+    } catch (error) {
+      console.error('Failed to load saved listings:', error);
+      setSavedListings([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    setSaved(getSavedListings(userEmail));
-  }, [userEmail]);
-
-  const save = useCallback(
-    (listing) => {
-      setSaved(addSavedListing(userEmail, listing));
-    },
-    [userEmail]
-  );
-
-  const unsave = useCallback(
-    (listingId) => {
-      setSaved(removeSavedListing(userEmail, listingId));
-    },
-    [userEmail]
-  );
+    loadSavedListings();
+  }, [loadSavedListings]);
 
   const isSaved = useCallback(
-    (listingId) => isListingSaved(userEmail, listingId),
-    [userEmail, saved]
+    (listingId) => {
+      return savedListings.some(
+        (listing) =>
+          listing.listing_id === listingId ||
+          listing.id === listingId
+      );
+    },
+    [savedListings]
+  );
+
+  const addListing = useCallback(
+    async (listing) => {
+      const listingId = listing.listing_id;
+
+      if (!listingId) return;
+
+      try {
+        await saveListing(listingId);
+        await loadSavedListings();
+      } catch (error) {
+        console.error('Failed to save listing:', error);
+      }
+    },
+    [loadSavedListings]
+  );
+
+  const removeListing = useCallback(
+    async (listingId) => {
+      if (!listingId) return;
+
+      try {
+        await removeSavedListing(listingId);
+        await loadSavedListings();
+      } catch (error) {
+        console.error('Failed to remove saved listing:', error);
+      }
+    },
+    [loadSavedListings]
   );
 
   const toggle = useCallback(
-    (listing) => {
-      if (!listing?.listing_id) return;
+    async (listing) => {
+      const listingId = listing.listing_id;
 
-      if (isSaved(listing.listing_id)) {
-        unsave(listing.listing_id);
+      if (!listingId) return;
+
+      if (isSaved(listingId)) {
+        await removeListing(listingId);
       } else {
-        save(listing);
+        await addListing(listing);
       }
     },
-    [isSaved, save, unsave]
-  );
-
-  const value = useMemo(
-    () => ({
-      saved,
-      save,
-      unsave,
-      isSaved,
-      toggle,
-    }),
-    [saved, save, unsave, isSaved, toggle]
+    [isSaved, removeListing, addListing]
   );
 
   return (
-    <SavedListingsContext.Provider value={value}>
+    <SavedListingsContext.Provider
+      value={{
+        savedListings,
+        isLoading,
+        isSaved,
+        addListing,
+        removeListing,
+        toggle,
+        refresh: loadSavedListings,
+      }}
+    >
       {children}
     </SavedListingsContext.Provider>
   );
@@ -81,7 +129,7 @@ export function useSavedListings() {
 
   if (!context) {
     throw new Error(
-      'useSavedListings must be used within a SavedListingsProvider'
+      'useSavedListings must be used within SavedListingsProvider'
     );
   }
 
